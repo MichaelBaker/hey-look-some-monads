@@ -57,3 +57,10 @@
          ~'zero (:zero ~monad)
          ~'plus (:plus ~monad)]
      ~bound-body)))
+
+(defmacro with-monad [monad & body]
+  `(let [~'bind (:bind ~monad)
+         ~'unit (:unit ~monad)
+         ~'zero (:zero ~monad)
+         ~'plus (:plus ~monad)]
+     ~@body))
