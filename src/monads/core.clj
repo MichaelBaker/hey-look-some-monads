@@ -11,19 +11,6 @@
               :otherwise                    (recur (rest forms) return)))]
     (fn [forms] (consumer forms {(keyword name) nil}))))
 
-(defmacro defmonad
-  "Extracts all of the relevant monadic functions from the macro and binds them
-   as a map to the given name"
-  [name & forms]
-  (letfn [(interpret-as-function [values] `(fn ~@values))
-          (interpret-as-constant [values] (first values))]
-     (let [parsers [(parser "plus" interpret-as-function)
-                    (parser "bind" interpret-as-function)
-                    (parser "unit" interpret-as-function)
-                    (parser "zero" interpret-as-constant)]
-          operations (apply merge (map #(% forms) parsers))]
-      `(def ~name ~operations))))
-
 (defn- make-binding [varname value remaining]
   `(~'bind ~value (fn [~varname] ~(intertwine remaining))))
 
@@ -48,6 +35,19 @@
             (recur (rest steps) (concat result (explode (first steps))))
           :otherwise
             (recur (rest steps) (concat result [(first steps)])))))
+
+(defmacro defmonad
+  "Extracts all of the relevant monadic functions from the macro and binds them
+   as a map to the given name"
+  [name & forms]
+  (letfn [(interpret-as-function [values] `(fn ~@values))
+          (interpret-as-constant [values] (first values))]
+     (let [parsers [(parser "plus" interpret-as-function)
+                    (parser "bind" interpret-as-function)
+                    (parser "unit" interpret-as-function)
+                    (parser "zero" interpret-as-constant)]
+          operations (apply merge (map #(% forms) parsers))]
+      `(def ~name ~operations))))
 
 (defmacro monad [monad & body]
   (let [normalized (normalize body)
