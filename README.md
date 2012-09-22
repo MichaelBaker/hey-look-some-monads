@@ -1,13 +1,7 @@
-# monads
+# hey-look-some-monads
 
-A Clojure library designed to ... well, that part is up to you.
+I wanted to develop a better intuition for what monads are and what they are commonly used for.
 
-## Usage
+To that end, I wrote some in Clojure.
 
-FIXME
-
-## License
-
-Copyright © 2012 FIXME
-
-Distributed under the Eclipse Public License, the same as Clojure.
+These are they.

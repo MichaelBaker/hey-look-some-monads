@@ -8,7 +8,4 @@
   (bind [m f]
     (apply concat (map f m)))
 
-  (collection [& args]
-    args)
-
   (zero []))
