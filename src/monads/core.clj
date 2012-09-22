@@ -39,18 +39,16 @@
         :otherwise
             (make-binding (gensym) (first steps) (rest steps))))
 
-(defn- explode [bindings]
+(defn- unzip [bindings]
   (map vec (partition 2 bindings)))
 
-(defn- normalize
-  ([steps] (normalize steps []))
-  ([steps result]
-    (cond (not (seq steps))
-            result
-          (vector? (first steps))
-            (recur (rest steps) (concat result (explode (first steps))))
-          :otherwise
-            (recur (rest steps) (concat result [(first steps)])))))
+(defn- normalize ([steps result]
+  (cond (not (seq steps))
+          result
+        (vector? (first steps))
+          (recur (rest steps) (concat result (unzip (first steps))))
+        :otherwise
+          (recur (rest steps) (concat result [(first steps)])))))
 
 (defmacro defmonad [name & forms]
   (let [values    (find-zero forms)
@@ -58,7 +56,7 @@
     `(def ~name {:values '~values :functions '~functions})))
 
 (defmacro monad [name & body]
-  (let [normal-body (normalize body)
+  (let [normal-body (normalize body [])
         bound-body  (intertwine normal-body)
         monad       (eval name)]
     `(let ~(:values monad)
