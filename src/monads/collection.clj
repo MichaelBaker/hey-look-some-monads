@@ -8,4 +8,7 @@
   (bind [m f]
     (apply concat (map f m)))
 
+  (plus [x y]
+    (concat x y))
+
   (zero []))
