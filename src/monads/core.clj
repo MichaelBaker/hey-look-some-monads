@@ -1,15 +1,29 @@
-(ns monads.core)
+(ns monads.core
+  (:refer-clojure :exclude [zero?]))
 
-(defn- parser
-  "Extracts a specific element from the macro's input and returns it as a map"
-  [name interpret-result]
-  (letfn [(correct-form? [form] (and (coll? form) (= (symbol name) (first form))))
-          (consumer [forms return]
-            (cond
-              (not (seq forms))             return
-              (correct-form? (first forms)) (assoc return (keyword name) (interpret-result (rest (first forms))))
-              :otherwise                    (recur (rest forms) return)))]
-    (fn [forms] (consumer forms {(keyword name) nil}))))
+(defn- zero? [form]
+  (= 'zero (first form)))
+
+(defn- find-zero [forms]
+  (cond
+    (not (seq forms))
+      []
+    (zero? (first forms))
+      (vec (first forms))
+    :otherwise
+      (recur (rest forms))))
+
+(defn- find-functions [forms result]
+  (cond
+    (not (seq forms))
+      result
+    (not (zero? (first forms)))
+      (recur (rest forms) (conj result (first forms)))
+    :otherwise
+      (recur (rest forms) result)))
+
+(def make-binding)
+(def intertwine)
 
 (defn- make-binding [varname value remaining]
   `(~'bind ~value (fn [~varname] ~(intertwine remaining))))
@@ -36,31 +50,21 @@
           :otherwise
             (recur (rest steps) (concat result [(first steps)])))))
 
-(defmacro defmonad
-  "Extracts all of the relevant monadic functions from the macro and binds them
-   as a map to the given name"
-  [name & forms]
-  (letfn [(interpret-as-function [values] `(fn ~@values))
-          (interpret-as-constant [values] (first values))]
-     (let [parsers [(parser "plus" interpret-as-function)
-                    (parser "bind" interpret-as-function)
-                    (parser "unit" interpret-as-function)
-                    (parser "zero" interpret-as-constant)]
-          operations (apply merge (map #(% forms) parsers))]
-      `(def ~name ~operations))))
+(defmacro defmonad [name & forms]
+  (let [values    (find-zero forms)
+        functions (find-functions forms [])]
+    `(def ~name {:values '~values :functions '~functions})))
 
-(defmacro monad [monad & body]
-  (let [normalized (normalize body)
-        bound-body (intertwine normalized)]
-  `(let [~'bind (:bind ~monad)
-         ~'unit (:unit ~monad)
-         ~'zero (:zero ~monad)
-         ~'plus (:plus ~monad)]
-     ~bound-body)))
+(defmacro monad [name & body]
+  (let [normal-body (normalize body)
+        bound-body  (intertwine normal-body)
+        monad       (eval name)]
+    `(let ~(:values monad)
+      (letfn ~(:functions monad)
+        ~bound-body))))
 
-(defmacro with-monad [monad & body]
-  `(let [~'bind (:bind ~monad)
-         ~'unit (:unit ~monad)
-         ~'zero (:zero ~monad)
-         ~'plus (:plus ~monad)]
-     ~@body))
+(defmacro with-monad [name & body]
+  (let [monad (eval name)]
+    `(let ~(:values monad)
+      (letfn ~(:functions monad)
+        ~@body))))

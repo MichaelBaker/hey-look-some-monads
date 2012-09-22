@@ -2,9 +2,9 @@
   (:use monads.core))
 
 (defmonad m-maybe
-  (unit [x] x)
+  (unit [x] (with-meta {:value x} {:m-maybe :just}))
   (bind [m f]
-    (if (= m nil)
-      nil
-      (f m)))
-  (zero nil))
+    (if (= :nothing (:m-maybe (meta m)))
+      (:value zero)
+      (f (:value m))))
+  (zero (with-meta {:value nil} {:m-maybe :nothing})))
