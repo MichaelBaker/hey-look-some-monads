@@ -29,11 +29,13 @@
   `(~'bind ~value (fn [~varname] ~(intertwine remaining))))
 
 (defn- intertwine [steps]
-  (cond (= 1 (count steps))
-          (first steps)
-        (vector? (first steps))
+  (cond (vector? (first steps))
           (let [[varname value] (first steps)]
             (make-binding varname value (rest steps)))
+        (= 1 (count steps))
+          (first steps)
+        (= 0 (count steps))
+          nil
         :otherwise
             (make-binding (gensym) (first steps) (rest steps))))
 
