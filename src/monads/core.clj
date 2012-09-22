@@ -68,3 +68,10 @@
     `(let ~(:values monad)
       (letfn ~(:functions monad)
         ~@body))))
+
+(defmacro lift-m [fn & args]
+  (let [bindings   (vec (map #(vector (gensym) %) args))
+        un-monadic (map first bindings)
+        expression `(~'unit (~fn ~@un-monadic))
+        body       (conj bindings expression)]
+    (intertwine body)))
